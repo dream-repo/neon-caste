@@ -11,7 +11,8 @@ const W = 640, H = 360, LANE_Y = [270, 314], XMIN = 26, XMAX = 614;
 const Q = new URLSearchParams(location.search);
 const DEBUG = Q.get('debug') === '1', BOT = Q.get('bot') === '1', AUTO = BOT && Q.get('auto') === '1';
 const SPEED = Math.max(1, Math.min(20, +(Q.get('speed') || 1)));
-const SAVE_KEY = 'neoncaste_p1_save';
+const SAVE_KEY = 'neoncaste_p1_save_v2';
+const SAVE_KEY_LEGACY = 'neoncaste_p1_save';
 const $ = s => document.querySelector(s);
 const rnd = Math.random;
 const R = (a, b) => a + rnd() * (b - a);
@@ -42,8 +43,8 @@ const ENEMIES = {
   puppet:   { name: 'Ad-Puppet', ai: 'melee', hp: 75, dmg: 9, spd: 75, range: 36, windup: .55, cd: 1.3, xp: 22, cr: 9, mech: 1, draw: 'puppet', erratic: 1 },
   collector:{ name: 'Debt Collector', ai: 'collector', hp: 95, dmg: 14, spd: 75, range: 36, windup: .8, cd: 2.6, xp: 30, cr: 22, mech: 0, draw: 'collector', keep: [110, 190] },
   mech:     { name: 'Riot Mech', ai: 'mech', hp: 760, dmg: 20, spd: 55, range: 56, windup: .9, cd: 1.9, xp: 160, cr: 120, mech: 1, draw: 'mech', armor: .45, boss: 1 },
-  wren1:    { name: 'Wren', ai: 'rival', hp: 320, dmg: 10, spd: 135, range: 42, windup: .38, cd: .95, xp: 120, cr: 60, mech: 0, draw: 'wren', boss: 1 },
-  wren2:    { name: 'Wren', ai: 'rival', hp: 580, dmg: 11, spd: 150, range: 46, windup: .34, cd: .85, xp: 260, cr: 160, mech: 0, draw: 'wren', boss: 1, gun: 1, lunge: 1 }
+  wren1:    { name: 'Nero', ai: 'rival', hp: 320, dmg: 10, spd: 135, range: 42, windup: .38, cd: .95, xp: 120, cr: 60, mech: 0, draw: 'wren', boss: 1 },
+  wren2:    { name: 'Nero', ai: 'rival', hp: 580, dmg: 11, spd: 150, range: 46, windup: .34, cd: .85, xp: 260, cr: 160, mech: 0, draw: 'wren', boss: 1, gun: 1, lunge: 1 }
 };
 const CONTRACTS = [
   { id: 'c_junk', district: 'gutter', lvl: 1, pool: ['junkie'], count: [3, 4], unlock: 'g1' },
@@ -149,7 +150,7 @@ function wName(w) { return (w.rar === 'common' ? '' : RARITY[w.rar].name + ' ') 
 function wVal(w) { return Math.round((WEAPONS[w.base].val || 10) * RARITY[w.rar].val * (w.dmg / (WEAPONS[w.base].dmg || 1)) + w.mods.filter(Boolean).length * 12); }
 function newSave(gender) {
   const f = mkWeapon('fists', 'common', true);
-  return { v: 1, gender, rank: 0, level: 1, xp: 0, rankXp: 0, skillPts: 0, hum: 100, creds: 15, scrap: 4, chrome: 0, ammo: 0,
+  return { v: 2, gender, rank: 0, level: 1, xp: 0, rankXp: 0, skillPts: 0, hum: 100, creds: 15, scrap: 4, chrome: 0, ammo: 0,
     weapons: [f], melee: f.uid, gun: null, skills: { street: 0, iron: 0, ghost: 0 }, perks: [], implants: [], power: null,
     done: {}, flags: {}, fence: [], fightsSinceStock: 0, stats: { fights: 0, wins: 0, losses: 0, kos: 0, time: 0 }, seenTips: {} };
 }
@@ -157,7 +158,32 @@ function save(quiet) {
   if (!S) return;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(S)); if (!quiet) toast('Saved'); } catch (e) { toast('Save failed'); }
 }
-function loadSave() { try { const j = localStorage.getItem(SAVE_KEY); return j ? JSON.parse(j) : null; } catch (e) { return null; } }
+function migrateSave(s) {
+  if (!s || typeof s !== 'object') return s;
+  // Rewrite leftover cached display strings from pre-rename saves.
+  const oldHero = ['Sa', 'ble'].join('');
+  const oldRival = ['Wr', 'en'].join('');
+  const out = JSON.parse(JSON.stringify(s)
+    .replace(new RegExp(oldHero + ' Vance', 'g'), 'Charlie Vance')
+    .replace(new RegExp(oldHero, 'g'), 'Charlie')
+    .replace(new RegExp(oldRival, 'g'), 'Nero'));
+  out.v = 2;
+  return out;
+}
+function loadSave() {
+  try {
+    let j = localStorage.getItem(SAVE_KEY);
+    let fromLegacy = false;
+    if (!j) { j = localStorage.getItem(SAVE_KEY_LEGACY); fromLegacy = !!j; }
+    if (!j) return null;
+    const raw = JSON.parse(j);
+    const s = migrateSave(raw);
+    if (fromLegacy || raw.v !== 2) {
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {}
+    }
+    return s;
+  } catch (e) { return null; }
+}
 const getW = uid => S.weapons.find(w => w.uid === uid);
 const has = (b, i) => S.skills[b] >= i; // node i (1-based) owned
 const perk = p => S.perks.includes(p);
@@ -1346,7 +1372,7 @@ function refreshHub() {
   if (!S || mode !== 'hub') return;
   $('#hubTop').innerHTML = statLine();
   const D = DISTRICTS[district()];
-  $('#hubDist').innerHTML = `${D.name}<small>${D.sub} · ${S.gender === 'f' ? 'Sable (she/her)' : 'Sable (he/him)'}</small>`;
+  $('#hubDist').innerHTML = `${D.name}<small>${D.sub} · ${S.gender === 'f' ? 'Charlie (she/her)' : 'Charlie (he/him)'}</small>`;
   const need = RANKS[S.rank].rankXp, pct = Math.min(100, 100 * S.rankXp / need);
   $('#hubRank').innerHTML = S.rank === 0
     ? `<span>RANK XP</span><span class="bar" style="max-width:220px"><i style="width:${pct}%;background:${pct >= 100 ? '#ffcf4a' : 'var(--mg)'}"></i></span><span>${Math.min(S.rankXp, need)}/${need} ${pct >= 100 ? '· PROOF READY' : '→ PROOF'}</span>`
@@ -1357,7 +1383,7 @@ function refreshHub() {
     const T2 = STORY.missions[m.id];
     const lock = m.proof && S.rankXp < RANKS[0].rankXp;
     html = `<div class="lbl">STORY · ${esc(T2.giver)}${lock ? ' · LOCKED' : ''}</div><div class="tt">▶ ${esc(T2.title)}</div><div class="ds">${esc(T2.desc)} ${lock ? `<br><b style="color:#ffcf4a">Earn Rank XP in fights: ${S.rankXp}/${RANKS[0].rankXp}</b>` : `<span style="color:#7f97b0">· Rec. Lv ${m.rec}</span>`}</div>`;
-  } else html = `<div class="lbl">PART 1 COMPLETE</div><div class="tt">To be continued: WARRIOR</div><div class="ds">Keep fighting contracts, crafting and building Sable. Humanity ${Math.round(S.hum)}${S.flags.dark ? ' · the dark path is open' : ''}.</div>`;
+  } else html = `<div class="lbl">PART 1 COMPLETE</div><div class="tt">To be continued: WARRIOR</div><div class="ds">Keep fighting contracts, crafting and building Charlie. Humanity ${Math.round(S.hum)}${S.flags.dark ? ' · the dark path is open' : ''}.</div>`;
   $('#hubObj').innerHTML = html;
   $('#bSkills').innerHTML = 'Skills' + (S.skillPts ? '<span class="dot"></span>' : '');
 }
@@ -1619,9 +1645,9 @@ $('#bNew').onclick = () => {
   const g = Q.get('gender') === 'f' || Q.get('gender') === 'm' ? Q.get('gender') : (rnd() < .5 ? 'f' : 'm');
   S = newSave(g); restockFence(); save(true);
   mode = 'hub'; $('#title').classList.add('hidden'); computeView();
-  runScene('intro', () => { save(true); showScreen('hub'); toast(`Sable rolled ${g === 'f' ? 'female (she/her)' : 'male (he/him)'}`); });
+  runScene('intro', () => { save(true); showScreen('hub'); toast(`Charlie rolled ${g === 'f' ? 'female (she/her)' : 'male (he/him)'}`); });
 };
-$('#bCont').onclick = () => { const s = loadSave(); if (!s) return; S = s; showScreen('hub'); toast('Welcome back, Sable'); };
+$('#bCont').onclick = () => { const s = loadSave(); if (!s) return; S = s; showScreen('hub'); toast('Welcome back, Charlie'); };
 
 // ---------------------------------------------------------------- INPUT
 const KEYMAP = { a: 'l', arrowleft: 'l', d: 'r', arrowright: 'r', w: 'u', arrowup: 'u', s: 'd', arrowdown: 'd', j: 'light', k: 'heavy', l: 'block', ' ': 'dodge', i: 'shoot', u: 'power' };

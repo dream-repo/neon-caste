@@ -1,18 +1,18 @@
 // =====================================================================
 // NEON CASTE – Part 1: The Gutter
 // ALL dialogue, mission text, NPC lines and cards live in this object.
-// Tokens: {they} {them} {their} {They} {Their} {kid} resolve from Sable's
+// Tokens: {they} {them} {their} {They} {Their} {kid} resolve from Charlie's
 // rolled gender. Conditions (if:) are evaluated in game.js COND table:
 //   lowHum (<50), highHum (>=50), evicted, fought, citizen, hobo, dark,
 //   tookCrate, leftCrate
 // =====================================================================
 const STORY = {
   cast: {
-    sable: { name: 'Sable', col: '#36f3ff', init: 'S' },
+    sable: { name: 'Charlie', col: '#36f3ff', init: 'C' },
     ox:    { name: 'Mama Ox', col: '#ffb347', init: 'O' },
     dex:   { name: 'Dex', col: '#7dff9b', init: 'D' },
     iris:  { name: 'Doc Iris', col: '#c9a0ff', init: 'I' },
-    wren:  { name: 'Wren', col: '#ff6b5e', init: 'W' },
+    wren:  { name: 'Nero', col: '#ff6b5e', init: 'N' },
     pell:  { name: 'Mr. Pell', col: '#ffd76a', init: 'P' },
     lusa:  { name: 'Lusa Marrow', col: '#9fd3ff', init: 'L' },
     pip:   { name: 'Pip Marrow', col: '#ffe9a8', init: 'P' },
@@ -26,11 +26,11 @@ const STORY = {
   missions: {
     g1: { title: 'Soup Line', giver: 'Mama Ox', desc: 'Junkies are robbing the Ladle\'s soup line. Run them off.' },
     g2: { title: 'Fell Off a Truck', giver: 'Dex', desc: 'Fetch Dex\'s "found" crate from the Scavver yards. Bottles. Dogs.' },
-    g3: { title: 'Old Stray', giver: 'Wren', desc: 'Someone keeps beating you to every job. Time to meet them.' },
+    g3: { title: 'Old Stray', giver: 'Nero', desc: 'Someone keeps beating you to every job. Time to meet them.' },
     proof: { title: 'The Proof', giver: 'Mr. Pell', desc: 'Spire Holdings will print you a Citizen chip. All you have to do is one job.' },
     b1: { title: 'Checkpoint Nine', giver: 'Dex', desc: 'Insulin for Kessel Street is stuck behind a Block Cop checkpoint.' },
     b2: { title: 'Screen Burn', giver: 'Doc Iris', desc: 'A bad ad update hijacked Corridor 12. The Spire is sending a Riot Mech to "pacify" it.' },
-    b3: { title: 'One Rung', giver: 'Wren', desc: 'One Warrior slot in the Arena. Two gutter kids want it.' },
+    b3: { title: 'One Rung', giver: 'Nero', desc: 'One Warrior slot in the Arena. Two gutter kids want it.' },
     teaser: { title: 'The Next Proof', giver: 'Mr. Pell', desc: 'The Spire has noticed you.' }
   },
 
@@ -54,8 +54,8 @@ const STORY = {
       { s: 'sable', t: 'Where... who are you?' },
       { s: 'ox', t: 'Mama Ox. I run the Ladle. Soup, a roof with most of the holes patched, and no questions before breakfast.' },
       { s: 'ox', t: 'You got a name, or you want me to read one off a can?' },
-      { s: 'sable', t: 'Sable. Sable Vance.' },
-      { s: 'ox', t: 'Well, Sable Vance, you have nothing. Down here that makes you a Hobo. Spire\'s word, not mine.' },
+      { s: 'sable', t: 'Charlie. Charlie Vance.' },
+      { s: 'ox', t: 'Well, Charlie Vance, you have nothing. Down here that makes you a Hobo. Spire\'s word, not mine.' },
       { s: 'ox', t: 'See that tower? Everyone down here is climbing toward it or falling off it. Nobody stands still.' },
       { s: 'ox', t: 'Eat. Then make yourself useful.' }
     ],
@@ -99,7 +99,7 @@ const STORY = {
     g3_intro: [
       { s: 'narr', t: 'Every job on Kessel Street this week, someone got there first.' },
       { s: 'wren', t: 'So you\'re Ox\'s new stray. I\'m her old one.' },
-      { s: 'wren', t: 'Wren. I\'ve been climbing this ladder since I was nine. I don\'t share rungs.' },
+      { s: 'wren', t: 'Nero. I\'ve been climbing this ladder since I was nine. I don\'t share rungs.' },
       { s: 'sable', t: 'Ladder\'s big enough.' },
       { s: 'wren', t: 'No. It isn\'t. That\'s the whole point of a ladder.' }
     ],
@@ -107,9 +107,9 @@ const STORY = {
       { s: 'wren', t: '...Fine. You hit like you mean it.' },
       { s: 'wren', t: 'Pell\'s hiring. Spire Holdings\' tenancy man. He hands out Proofs: one job for the Spire, and they print you a Citizen chip.' },
       { s: 'wren', t: 'I\'m doing mine soon. Stay out of my way.' },
-      { s: 'ox', t: '{They} put you on your back, Wren. Get up and say thank you.' },
+      { s: 'ox', t: '{They} put you on your back, Nero. Get up and say thank you.' },
       { s: 'wren', t: 'Thank you for nothing, Ox.' },
-      { s: 'ox', t: 'Wren isn\'t cruel. Wren\'s hungry. Down here those look the same, right up until they don\'t.' },
+      { s: 'ox', t: 'Nero isn\'t cruel. Nero\'s hungry. Down here those look the same, right up until they don\'t.' },
       { s: 'ox', t: 'When Pell gives you your Proof, hear the whole thing. Then go hear whoever it\'s about.' },
       { card: 'THE PROOF', sub: 'Earn Rank XP in fights. When it\'s full, Mr. Pell will see you.' }
     ],
@@ -118,10 +118,10 @@ const STORY = {
       { s: 'pell', t: 'Spire Holdings doesn\'t interview nobodies. Come back when people on Kessel Street say your name.' }
     ],
     proof_intro: [
-      { s: 'pell', t: 'Sable Vance. Hobo. No fixed address, no chip. And yet people keep saying your name.' },
+      { s: 'pell', t: 'Charlie Vance. Hobo. No fixed address, no chip. And yet people keep saying your name.' },
       { s: 'pell', t: 'Spire Holdings rewards initiative. I\'m offering you a Proof.' },
       { s: 'pell', t: 'Unit 4C, Gantry Row. Squatters. A family of three, two years past due. You remove them, you get a chip.' },
-      { s: 'pell', t: 'Citizenship, Sable. Dry bed. Clean water. A door that locks from your side.' },
+      { s: 'pell', t: 'Citizenship, Charlie. Dry bed. Clean water. A door that locks from your side.' },
       { s: 'sable', t: 'And them?' },
       { s: 'pell', t: '"Them" is not a question the Spire asks.' },
       { s: 'narr', t: 'Unit 4C. A bedsheet for a door. A rice cooker. A child\'s drawing of a sun taped to the wall.' },
@@ -136,7 +136,7 @@ const STORY = {
     proof_hear: [
       { s: 'lusa', t: 'Teo worked the Spire\'s water plant eleven years. Lung rot. They cancelled his chip the week he couldn\'t stand.' },
       { s: 'lusa', t: 'Pell\'s crew is waiting downstairs. Two bruisers and a collector. If you don\'t do it, they will. They just don\'t do it gently.' },
-      { s: 'pip', t: 'You could fight them. You fought Wren. Everybody saw.' },
+      { s: 'pip', t: 'You could fight them. You fought Nero. Everybody saw.' },
       { s: 'narr', t: 'Pell wants a Proof. He didn\'t say what you had to prove.' },
       { choice: [
         { t: 'Tell them to pack. (Citizen now, -25 Humanity)', act: 'evict' },
@@ -207,7 +207,7 @@ const STORY = {
       { s: 'wren', t: 'My Proof was a man named Halvorsen. I don\'t talk about Halvorsen.' },
       { s: 'wren', t: 'Your eyes do the chrome thing now. Like you\'re reading a price tag on me.', if: 'lowHum' },
       { s: 'wren', t: 'You still look like you. How? Everyone who climbs starts looking like the Spire.', if: 'highHum' },
-      { s: 'wren', t: 'Pell has one Warrior slot in the Arena this season. One. So here\'s the ladder again, Sable.' }
+      { s: 'wren', t: 'Pell has one Warrior slot in the Arena this season. One. So here\'s the ladder again, Charlie.' }
     ],
     b3_win: [
       { s: 'wren', t: '...Go on, then. Take the slot.' },
@@ -220,7 +220,7 @@ const STORY = {
       { s: 'pell', t: 'Your Warrior Proof is simple. There is an unlicensed food operation on Kessel Street. The Ladle.' },
       { s: 'pell', t: 'Close it. Permanently.' },
       { s: 'narr', t: 'Twelve floors down, Mama Ox is ladling soup into a kid\'s bowl. She doesn\'t know yet.' },
-      { s: 'ox', t: 'Two ways up a ladder, Sable. You climb it like the ones above you did...' },
+      { s: 'ox', t: 'Two ways up a ladder, Charlie. You climb it like the ones above you did...' },
       { s: 'ox', t: '...or you burn it, and build stairs.' },
       { s: 'narr', t: 'Your Humanity is gone. The Spire already thinks it knows which way you\'ll climb.', if: 'dark' },
       { card: 'TO BE CONTINUED', sub: 'WARRIOR', big: true }
@@ -233,20 +233,20 @@ const STORY = {
   // Hub chatter. Keyed by NPC -> rank -> warm/cold (Humanity >= 50 / < 50)
   talk: {
     ox: {
-      hobo: { warm: ['Bowl\'s on the counter. Eat before Wren does.', 'Every Spire tower was poured by somebody from down here. Remember that.', 'You got a soft way of hitting hard. Keep the soft part.'],
+      hobo: { warm: ['Bowl\'s on the counter. Eat before Nero does.', 'Every Spire tower was poured by somebody from down here. Remember that.', 'You got a soft way of hitting hard. Keep the soft part.'],
               cold: ['...Bowl\'s on the counter.', 'You\'re getting that look. The one people get right before they forget my name.'] },
       citizen: { warm: ['A Citizen eating at the Ladle. The neighbors will talk. Let them.', 'They give you a door that locks. Don\'t forget who\'s on the other side of it.'],
                  cold: ['You eat like you\'re doing me a favor now.', 'I fed you when you had nothing. I\'d do it again. I\'m not sure you would.'] }
     },
     dex: {
       hobo: { warm: ['Everything\'s for sale except my opinion, which is free and correct.', 'You want a better gun, bring better money. That\'s the whole economy.'],
-              cold: ['Discount for you. Not because I like you. Because you make people nervous.', 'You\'re scaring the customers, Sable. Good for business, bad for my nerves.'] },
+              cold: ['Discount for you. Not because I like you. Because you make people nervous.', 'You\'re scaring the customers, Charlie. Good for business, bad for my nerves.'] },
       citizen: { warm: ['Citizen markup. Don\'t look at me like that, the Spire taxes my feelings.', 'Better stock up here. Everyone in the Blocks has money and no taste.'],
                  cold: ['Fine, fine, cheaper. Just stop looking at me with those eyes.', 'You used to haggle. Now you just stand there until I lower it.'] }
     },
     iris: {
       hobo: { warm: ['Every implant costs a piece of you. I just do the paperwork.', 'Metal doesn\'t make you strong. It makes you expensive.'],
-              cold: ['Not much left in there to cut around, Sable.', 'I\'m charging you more. Call it a conscience fee.'] },
+              cold: ['Not much left in there to cut around, Charlie.', 'I\'m charging you more. Call it a conscience fee.'] },
       citizen: { warm: ['Citizen rates. The Spire takes half. I take the other half and buy bandages for the Gutter.', 'Corridor 12 still asks about you. The ones who remember.'],
                  cold: ['Sit. Don\'t talk. You don\'t, much, anymore.', 'You\'re the third client this month who stopped feeling cold. That\'s not a feature.'] }
     },
