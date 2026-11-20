@@ -1500,7 +1500,7 @@ function openSave() {
   openPanel('save', 'SAVE', html);
 }
 function panelAction(act, d) {
-  const w = d.uid ? getW(d.uid) : null;
+  const w = d.uid ? (getW(d.uid) || (act === 'buy' ? (S.fence || []).find(x => x.uid === d.uid) : null)) : null;
   switch (act) {
     case 'contract': return startContract(d.id);
     case 'mission': { closePanel(); const m = curMission(); if (m) startMission(m); return; }

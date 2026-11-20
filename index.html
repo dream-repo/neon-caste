@@ -132,6 +132,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ab.light{border-color:var(--cy);box-shadow:0 0 12px rgba(54,243,255,.4)} .ab.heavy{border-color:#ff8a5c;box-shadow:0 0 12px rgba(255,138,92,.4)}
 .ab.dodge{border-color:#7dff9b} .ab.block{border-color:#8aa4ff} .ab.shoot{border-color:#ffcf4a} .ab.power{border-color:var(--mg);box-shadow:0 0 12px rgba(255,63,210,.4)}
 .ab.cd{opacity:.45}
+@media (max-width:440px){#dpad{left:calc(8px + var(--sl))}#acts{right:calc(8px + var(--sr));grid-template-columns:repeat(3,56px);gap:7px}.ab{width:56px;height:58px;font-size:10px;letter-spacing:.03em}}
 #keys{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(8px + var(--sb));font-size:11px;color:#6d86a0;white-space:nowrap;letter-spacing:.05em}
 #toast{position:fixed;left:50%;top:calc(70px + var(--st));transform:translateX(-50%);z-index:60;background:rgba(8,14,28,.95);border:1px solid var(--cy);padding:8px 14px;border-radius:8px;font-size:13px;font-weight:700;pointer-events:none;box-shadow:0 0 16px rgba(54,243,255,.4)}
 #pause{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
