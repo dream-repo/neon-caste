@@ -4,6 +4,7 @@
  * Data tables below (RANKS, ENEMIES, CONTRACTS, WEAPONS, MODS, IMPLANTS, SKILLS, PERKS)
  * are written so WARRIOR / ELITE / RULER can be appended later.
  * Every entity has its own draw function (draw_<kind>) so real art can be swapped in.
+ * Painted portraits, fight sprites and district backdrops live in assets/ and fall back to shapes if a file fails to load.
  * Hidden test flags: ?debug=1 (cheat panel), ?bot=1 (autoplayer in fights),
  * ?bot=1&auto=1 (bot also drives the hub), ?speed=N (sim speed for bot), ?gender=m|f, ?choice=evict|fight
  */
@@ -21,6 +22,95 @@ const pick = a => a[Math.floor(rnd() * a.length)];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+// ---------------------------------------------------------------- ART (painted assets; shapes are the fallback)
+const ART = { imgs: {}, ok: {} };
+const ART_FILES = [
+  'assets/portrait_charlie_m.webp', 'assets/portrait_charlie_f.webp', 'assets/portrait_nero.webp',
+  'assets/portrait_ox.webp', 'assets/portrait_dex.webp', 'assets/portrait_iris.webp', 'assets/portrait_pell.webp',
+  'assets/portrait_lusa.webp', 'assets/portrait_pip.webp', 'assets/portrait_spire.webp', 'assets/portrait_cop.webp',
+  'assets/spr_charlie_m.webp', 'assets/spr_charlie_f.webp', 'assets/spr_nero.webp', 'assets/spr_ox.webp',
+  'assets/spr_junkie.webp', 'assets/spr_scavver.webp', 'assets/spr_hound.webp', 'assets/spr_drone.webp',
+  'assets/spr_bruiser.webp', 'assets/spr_cop.webp', 'assets/spr_puppet.webp', 'assets/spr_collector.webp', 'assets/spr_mech.webp',
+  'assets/bg_gutter.webp', 'assets/bg_blocks.webp'
+];
+function loadArt() {
+  for (const src of ART_FILES) {
+    const im = new Image();
+    im.onload = () => {
+      ART.ok[src] = true;
+      if (DLG && !DLG.choosing) {
+        const st = DLG.steps[DLG.i - 1];
+        if (st && st.s) setPortrait(st.s);
+      }
+    };
+    im.onerror = () => { ART.ok[src] = false; };
+    im.src = src;
+    ART.imgs[src] = im;
+  }
+}
+const artOk = src => !!(ART.ok[src] && ART.imgs[src] && ART.imgs[src].complete && ART.imgs[src].naturalWidth > 0);
+function portraitSrc(k) {
+  if (k === 'sable') return S && S.gender === 'f' ? 'assets/portrait_charlie_f.webp' : 'assets/portrait_charlie_m.webp';
+  return ({
+    ox: 'assets/portrait_ox.webp', dex: 'assets/portrait_dex.webp', iris: 'assets/portrait_iris.webp',
+    wren: 'assets/portrait_nero.webp', pell: 'assets/portrait_pell.webp', lusa: 'assets/portrait_lusa.webp',
+    pip: 'assets/portrait_pip.webp', spire: 'assets/portrait_spire.webp', cop: 'assets/portrait_cop.webp'
+  })[k] || null;
+}
+function playerSpriteKey() { return S && S.gender === 'f' ? 'charlie_f' : 'charlie_m'; }
+// h is game-pixel height (feet to head). fx/fy are image-space origin fractions (feet, or body center if hover).
+const SPRITES = {
+  charlie_m: { src: 'assets/spr_charlie_m.webp', h: 100, fx: 0.50 },
+  charlie_f: { src: 'assets/spr_charlie_f.webp', h: 98, fx: 0.44 },
+  wren:      { src: 'assets/spr_nero.webp', h: 100, fx: 0.39 },
+  junkie:    { src: 'assets/spr_junkie.webp', h: 98, fx: 0.68 },
+  scavver:   { src: 'assets/spr_scavver.webp', h: 100, fx: 0.73 },
+  hound:     { src: 'assets/spr_hound.webp', h: 54, fx: 0.54 },
+  drone:     { src: 'assets/spr_drone.webp', h: 44, fx: 0.49, fy: 0.43, hover: 1 },
+  bruiser:   { src: 'assets/spr_bruiser.webp', h: 116, fx: 0.47 },
+  cop:       { src: 'assets/spr_cop.webp', h: 104, fx: 0.54 },
+  puppet:    { src: 'assets/spr_puppet.webp', h: 100, fx: 0.52 },
+  collector: { src: 'assets/spr_collector.webp', h: 104, fx: 0.39 },
+  mech:      { src: 'assets/spr_mech.webp', h: 134, fx: 0.50 },
+  ox:        { src: 'assets/spr_ox.webp', h: 112, fx: 0.61 }
+};
+function drawActorSprite(g, e, key) {
+  const meta = SPRITES[key];
+  if (!meta || !artOk(meta.src)) return false;
+  const img = ART.imgs[meta.src], f = e.face || 1, st = e.state || 'idle';
+  const h = meta.h, w = h * (img.naturalWidth / img.naturalHeight);
+  const fx = meta.fx == null ? .5 : meta.fx, fy = meta.fy == null ? 1 : meta.fy;
+  const t = e.anim || 0;
+  let bob = 0, dx = 0, sx = 1, sy = 1;
+  if (meta.hover) bob = Math.sin(t * 3) * 4;
+  else if (e.moving) bob = -Math.abs(Math.sin(t * 12)) * 2;
+  else bob = Math.sin(t * 3) * 1.1;
+  if (st === 'hurt' || st === 'stun') { sx = 1.05; sy = .93; dx = -f * 5; }
+  else if (st === 'light' || st === 'attack' || st === 'heavy' || st === 'spin' || st === 'lunge' || st === 'power') { dx = f * 10; sx = 1.07; sy = .95; }
+  else if (st === 'windup') { sy = .96; sx = 1.04; }
+  else if (st === 'dodge') { dx = f * 8; sy = .94; }
+  else if (st === 'charge') { sy = .93; sx = 1.06; }
+  else if (st === 'block') { dx = -f * 2; }
+  g.save();
+  g.translate(e.x + dx, e.y);
+  if (st === 'down' || st === 'ko' || st === 'dead') { g.translate(-f * 6, -4); g.rotate(-f * 1.45 * Math.min(1, (e.downP || 1))); }
+  else if (meta.hover && (st === 'ko' || st === 'down')) { g.rotate(.5); g.translate(0, 10); }
+  const ga = g.globalAlpha;
+  g.globalAlpha = ga * .35; g.fillStyle = '#000'; g.beginPath(); g.ellipse(0, 0, meta.hover ? 18 : Math.max(14, w * .28), 4, 0, 0, 7); g.fill();
+  g.globalAlpha = ga;
+  if (meta.hover && st !== 'ko' && st !== 'down' && st !== 'dead') g.translate(0, -78 + bob);
+  else g.translate(0, bob);
+  if (e.elite && e.glowCol) { g.shadowColor = e.glowCol; g.shadowBlur = 18; }
+  g.scale((f >= 0 ? 1 : -1) * sx, sy);
+  const ox = -fx * w, oy = meta.hover ? -fy * h : -h;
+  const flash = e.flashT > 0 || ((st === 'hurt' || st === 'stun') && Math.sin(T * 40) > 0);
+  if (flash) try { g.filter = 'brightness(2.4) saturate(.35)'; } catch (err) {}
+  g.drawImage(img, ox, oy, w, h);
+  if (flash) try { g.filter = 'none'; } catch (err) {}
+  g.restore();
+  return true;
+}
 
 // ---------------------------------------------------------------- DATA
 const RANKS = [
@@ -384,7 +474,18 @@ function drawWeather(g, dt, kind) {
     for (const d of dust) { d.y -= d.v * dt; d.a += dt; if (d.y < -120) d.y = 420; g.fillRect(d.x + Math.sin(d.a) * 6, d.y, 1.5, 1.5); }
   }
 }
-function drawBG(g, dist, px) { (dist === 'blocks' ? drawBG_blocks : drawBG_gutter)(g, px); }
+function drawBG(g, dist, px) {
+  const src = dist === 'blocks' ? 'assets/bg_blocks.webp' : 'assets/bg_gutter.webp';
+  if (artOk(src)) {
+    const par = (px - 320) * -0.04, img = ART.imgs[src], scale = 1.18;
+    const bw = W * scale, bh = H * scale;
+    g.drawImage(img, (W - bw) / 2 + par, (H - bh) / 2 - 8, bw, bh);
+    g.strokeStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 1;
+    for (const ly of LANE_Y) { g.beginPath(); g.moveTo(-400, ly + 6); g.lineTo(1040, ly + 6); g.stroke(); }
+    return;
+  }
+  (dist === 'blocks' ? drawBG_blocks : drawBG_gutter)(g, px);
+}
 
 // ---------------------------------------------------------------- FIGURE RENDERING
 // angles: 0 = straight down, +PI/2 = forward (facing), PI = straight up
@@ -547,6 +648,7 @@ const LOOKS = {
       const s = Math.sin(T * 6) * 4; g.strokeStyle = '#ff3b3b'; g.lineWidth = 4; g.beginPath(); g.moveTo(hd[0], hd[1] + 9); g.quadraticCurveTo(hd[0] - f * 18, hd[1] + 12 + s, hd[0] - f * 30, hd[1] + 6 - s); g.stroke(); } }
 };
 function drawEnemy(g, e) {
+  if (drawActorSprite(g, e, e.def.draw)) return;
   const fn = DRAW[e.def.draw]; if (fn) fn(g, e); else drawHumanoid(g, e, Object.assign({ glow: e.glowCol }, LOOKS[e.def.draw] || LOOKS.junkie));
 }
 const DRAW = {
@@ -1195,12 +1297,16 @@ function renderFight(g, dt) {
   updateFightHud();
 }
 function drawPlayerActor(g, P) {
-  const look = lookPlayer();
+  const look = lookPlayer(), key = playerSpriteKey();
   if (P.invT > 0 && P.state !== 'power' && Math.sin(T * 40) > 0) g.globalAlpha = .5;
-  if (P.state === 'dodge') { g.globalAlpha = .25; drawHumanoid(g, { ...P, x: P.x - P.vx * .05 }, look); g.globalAlpha = .6; }
+  if (P.state === 'dodge') {
+    g.globalAlpha = .25;
+    if (!drawActorSprite(g, { ...P, x: P.x - P.vx * .05 }, key)) drawHumanoid(g, { ...P, x: P.x - P.vx * .05 }, look);
+    g.globalAlpha = .6;
+  }
   if (P.state === 'power' && S.power === 'mantis') look.weapon = 'blades';
   if (P.state === 'charge') { glowBlob(g, P.x, P.y - 60, 30 + P.chargeT * 30, P.chargeT >= 1 ? 'rgba(255,207,74,.8)' : 'rgba(255,138,92,.6)', .5 + .3 * Math.sin(T * 30)); }
-  drawHumanoid(g, P, look);
+  if (!drawActorSprite(g, P, key)) drawHumanoid(g, P, look);
   g.globalAlpha = 1;
   if (P.pulseT > 0) { g.strokeStyle = `rgba(255,63,210,${.5 + .3 * Math.sin(T * 20)})`; g.lineWidth = 2.5; g.beginPath(); g.ellipse(P.x, P.y - 48, 34, 56, 0, 0, 7); g.stroke(); }
   if (P.state === 'block') { g.strokeStyle = 'rgba(138,164,255,.7)'; g.lineWidth = 2; g.beginPath(); g.arc(P.x + P.face * 6, P.y - 55, 30, P.face > 0 ? -1 : Math.PI - 1, P.face > 0 ? 1 : Math.PI + 1); g.stroke(); }
@@ -1327,7 +1433,13 @@ function applyFx(fx) {
 }
 function setPortrait(k) {
   const c = STORY.cast[k] || STORY.cast.narr, pt = $('#dPt');
-  pt.textContent = c.init; pt.style.color = c.col; pt.style.visibility = c.init ? 'visible' : 'hidden';
+  const src = portraitSrc(k);
+  if (src && artOk(src)) {
+    pt.textContent = ''; pt.style.backgroundImage = 'url(' + src + ')'; pt.classList.add('has-art'); pt.style.visibility = 'visible';
+  } else {
+    pt.style.backgroundImage = ''; pt.classList.remove('has-art'); pt.textContent = c.init; pt.style.visibility = c.init ? 'visible' : 'hidden';
+  }
+  pt.style.color = c.col;
   $('#dNm').textContent = c.name; $('#dNm').style.color = c.col;
 }
 function advanceDialog() {
@@ -1399,8 +1511,9 @@ function hubButton(p) {
 }
 function npcLine(k) {
   const set = STORY.talk[k][S.rank ? 'citizen' : 'hobo'][S.hum < 50 ? 'cold' : 'warm'];
-  const c = STORY.cast[k];
-  return `<div class="npcline"><div class="pt" style="color:${c.col}">${c.init}</div><div><b style="color:${c.col}">${c.name}</b><br>${esc(fmt(pick(set)))}</div></div>`;
+  const c = STORY.cast[k], src = portraitSrc(k), art = src && artOk(src);
+  const pt = art ? `<div class="pt has-art" style="color:${c.col};background-image:url(${src})"></div>` : `<div class="pt" style="color:${c.col}">${c.init}</div>`;
+  return `<div class="npcline">${pt}<div><b style="color:${c.col}">${c.name}</b><br>${esc(fmt(pick(set)))}</div></div>`;
 }
 function enemyNames(c) { return [...new Set((c.list || c.pool).map(id => ENEMIES[id].name))].join(', '); }
 function openFightList() {
@@ -1770,10 +1883,10 @@ function renderScene(dt) {
   drawBG(g, dist, 320 + Math.sin(T * .2) * 60);
   if (S && mode === 'hub') {
     const fake = { x: 330, y: LANE_Y[1] - 4, face: -1, state: 'idle', anim: T, glowCol: null };
-    drawHumanoid(g, fake, lookPlayer());
+    if (!drawActorSprite(g, fake, playerSpriteKey())) drawHumanoid(g, fake, lookPlayer());
     const npc = { x: 470, y: LANE_Y[0], face: -1, state: 'idle', anim: T + 1 };
-    if (dist === 'gutter') drawHumanoid(g, npc, { glow: '#ffb347', body: '#1a1208', sw: 14, hw: 13, lw: 9, scale: 1.12, head: (g2, e, hd) => { g2.fillStyle = '#ffb347'; g2.fillRect(hd[0] - 10, hd[1] - 10, 20, 4); } });
-    else drawHumanoid(g, { ...npc, x: 180, face: 1 }, Object.assign({ glow: '#ff3fd2' }, LOOKS.cop, { front: null }));
+    if (dist === 'gutter') { if (!drawActorSprite(g, npc, 'ox')) drawHumanoid(g, npc, { glow: '#ffb347', body: '#1a1208', sw: 14, hw: 13, lw: 9, scale: 1.12, head: (g2, e, hd) => { g2.fillStyle = '#ffb347'; g2.fillRect(hd[0] - 10, hd[1] - 10, 20, 4); } }); }
+    else if (!drawActorSprite(g, { ...npc, x: 180, face: 1 }, 'cop')) drawHumanoid(g, { ...npc, x: 180, face: 1 }, Object.assign({ glow: '#ff3fd2' }, LOOKS.cop, { front: null }));
   }
   drawWeather(g, dt, dist);
   g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1800,5 +1913,6 @@ function loop(now) {
 // test hooks
 window.NC = { IN, fmt, get S() { return S; }, get F() { return F; }, get mode() { return mode; }, BOTS, startContract, startMission, curMission, runScene, panelAction, save, loadSave, grantXp, MISSIONS, CONTRACTS,
   winFight() { if (F) for (const e of F.enemies) if (e.alive) { e.hp = 1; hurtEnemy(e, 999, { src: 'power' }); } if (F) F.queue.length = 0; } };
+loadArt();
 resize(); updateTitle(); showScreen('title');
 requestAnimationFrame(loop);

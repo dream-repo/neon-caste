@@ -9,4 +9,4 @@ A dystopian cyberpunk side-view brawler RPG that runs in the browser. Play: http
 
 Phone first (touch d-pad and action buttons). Keys: WASD/arrows move, J light, K heavy, L block, Space dodge, I shoot, U power, Esc menu.
 
-Plain HTML + JS, no build step, no image or audio files. All dialogue lives in `story.js`.
+Plain HTML + JS, no build step. Painted portraits, fight sprites and district backdrops live in `assets/` (shape placeholders are the fallback if an image fails to load). All dialogue lives in `story.js`.
